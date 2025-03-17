@@ -21,64 +21,43 @@ jobs:
         with:
           xcode-version: '15.2'
 
+      - name: Fix Project Format
+        run: |
+          sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
+
+      - name: Build App
+        run: |
+          xcodebuild clean build \
+            -project JitStreamer.xcodeproj \
+            -scheme JitStreamer \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Create IPA Structure
         run: |
-          # Create basic app structure
-          mkdir -p Payload/JitStreamer.app
+          # Create Payload directory
+          mkdir -p Payload
           
-          # Copy all source files and resources
-          cp -r JitStreamer/* Payload/JitStreamer.app/
+          # Copy the built .app
+          cp -r build/Build/Products/Release-iphoneos/JitStreamer.app Payload/
           
-          # Create basic Info.plist
-          cat > Payload/JitStreamer.app/Info.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>CFBundleIdentifier</key>
-              <string>com.stik.jitstreamer</string>
-              <key>CFBundleName</key>
-              <string>JitStreamer</string>
-              <key>CFBundleDisplayName</key>
-              <string>JitStreamer</string>
-              <key>CFBundleExecutable</key>
-              <string>JitStreamer</string>
-              <key>CFBundleVersion</key>
-              <string>1.0</string>
-              <key>CFBundleShortVersionString</key>
-              <string>1.0</string>
-              <key>CFBundlePackageType</key>
-              <string>APPL</string>
-              <key>LSRequiresIPhoneOS</key>
-              <true/>
-              <key>MinimumOSVersion</key>
-              <string>17.4</string>
-              <key>UIDeviceFamily</key>
-              <array>
-                  <integer>1</integer>
-                  <integer>2</integer>
-              </array>
-          </dict>
-          </plist>
-          EOF
+          # Update Info.plist with required keys
+          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities array" Payload/JitStreamer.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities:0 string 'arm64'" Payload/JitStreamer.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" Payload/JitStreamer.app/Info.plist
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string 'UIInterfaceOrientationPortrait'" Payload/JitStreamer.app/Info.plist
           
-          # Compile Swift files
-          swiftc JitStreamer/*.swift -o Payload/JitStreamer.app/JitStreamer \
-            -target arm64-apple-ios17.4 \
-            -sdk $(xcrun --sdk iphoneos --show-sdk-path) \
-            -F $(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks \
-            -framework SwiftUI \
-            -framework Foundation \
-            -framework UIKit \
-            -framework UniformTypeIdentifiers
-
           # Create IPA
           zip -r JitStreamer.ipa Payload
-          rm -rf Payload
+          rm -rf Payload build
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: JitStreamer.ipa
+          name: JitStreamer-unsigned
           path: JitStreamer.ipa
           retention-days: 90 
