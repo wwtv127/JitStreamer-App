@@ -2,9 +2,9 @@ name: Build Unsigned IPA
 
 on:
   push:
-    branches: [ "iOS" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "iOS" ]
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
