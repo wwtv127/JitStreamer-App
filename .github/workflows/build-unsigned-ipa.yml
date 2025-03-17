@@ -39,18 +39,54 @@ jobs:
               <string>com.stik.jitstreamer</string>
               <key>CFBundleName</key>
               <string>JitStreamer</string>
+              <key>CFBundleDisplayName</key>
+              <string>JitStreamer</string>
               <key>CFBundleExecutable</key>
               <string>JitStreamer</string>
               <key>CFBundleVersion</key>
               <string>1.0</string>
               <key>CFBundleShortVersionString</key>
               <string>1.0</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
               <key>MinimumOSVersion</key>
-              <string>17.0</string>
+              <string>17.4</string>
+              <key>UIDeviceFamily</key>
+              <array>
+                  <integer>1</integer>
+                  <integer>2</integer>
+              </array>
+              <key>UIRequiredDeviceCapabilities</key>
+              <array>
+                  <string>arm64</string>
+              </array>
+              <key>UISupportedInterfaceOrientations</key>
+              <array>
+                  <string>UIInterfaceOrientationPortrait</string>
+                  <string>UIInterfaceOrientationLandscapeLeft</string>
+                  <string>UIInterfaceOrientationLandscapeRight</string>
+              </array>
+              <key>UILaunchStoryboardName</key>
+              <string>Launch Screen</string>
           </dict>
           </plist>
           EOF
           
+          # Compile Swift files
+          swiftc JitStreamer/*.swift -o Payload/JitStreamer.app/JitStreamer \
+            -target arm64-apple-ios17.4 \
+            -sdk $(xcrun --sdk iphoneos --show-sdk-path) \
+            -F $(xcrun --sdk iphoneos --show-sdk-path)/System/Library/Frameworks \
+            -framework SwiftUI \
+            -framework Foundation \
+            -framework UIKit \
+            -framework UniformTypeIdentifiers \
+            -import-objc-header JitStreamer/JitStreamer-Bridging-Header.h \
+            -enable-library-evolution \
+            -swift-version 5
+
           # Create IPA
           zip -r JitStreamer.ipa Payload
           rm -rf Payload
