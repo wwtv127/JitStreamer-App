@@ -8,48 +8,60 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-unsigned-ipa:
+  build:
     name: Build Unsigned IPA
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Build IPA
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest'
+
+      - name: Fix Project Format
         run: |
-          APP_NAME="JitStreamer"
-          BUNDLE_ID="com.stik.jitstreamer"
-          
-          mkdir -p Payload/$APP_NAME.app
-          cp -r JitStreamer/* Payload/$APP_NAME.app/
-          
-          cat > Payload/$APP_NAME.app/Info.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key>
-    <string>$BUNDLE_ID</string>
-    <key>CFBundleExecutable</key>
-    <string>$APP_NAME</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-</dict>
-</plist>
-EOF
-          
-          touch Payload/$APP_NAME.app/$APP_NAME
-          chmod +x Payload/$APP_NAME.app/$APP_NAME
-          
-          zip -r $APP_NAME-unsigned.ipa Payload
-          rm -rf Payload
-          
-      - name: Upload Unsigned IPA
+          sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
+          sed -i '' 's/preferredProjectObjectVersion = 77/preferredProjectObjectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
+
+      - name: Archive Build (Unsigned)
+        run: |
+          xcodebuild clean archive \
+            -project JitStreamer.xcodeproj \
+            -scheme "JitStreamer" \
+            -configuration Release \
+            -archivePath build/JitStreamer.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=17.0
+
+      - name: Create IPA from Archive
+        run: |
+          # Copy the .app from the archive
+          cp -R build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app .
+
+          # Strip debug symbols
+          strip -S -x JitStreamer.app/JitStreamer || true
+
+          # Remove simulator architectures
+          APP_PATH="JitStreamer.app"
+          if [ -f "$APP_PATH/JitStreamer" ]; then
+            lipo "$APP_PATH/JitStreamer" -info
+            lipo -remove x86_64 "$APP_PATH/JitStreamer" -o "$APP_PATH/JitStreamer" || true
+          fi
+
+          # Package into IPA
+          mkdir -p Payload
+          cp -R JitStreamer.app Payload/
+          zip -r JitStreamer.ipa Payload
+          rm -rf Payload JitStreamer.app
+
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: JitStreamer-unsigned-ipa
-          path: JitStreamer-unsigned.ipa
-          retention-days: 7 
+          name: JitStreamer.ipa
+          path: JitStreamer.ipa
+          retention-days: 90 
