@@ -18,48 +18,45 @@ jobs:
 
       - name: Create IPA Structure
         run: |
-          # Create Payload directory
+          set -e
+          
+          echo "Creating Payload directory..."
           mkdir -p Payload/JitStreamer.app
           
-          # Copy all app contents
-          cp -r JitStreamer/* Payload/JitStreamer.app/
+          echo "Copying app contents..."
+          cp -r JitStreamer/* Payload/JitStreamer.app/ || true
           
-          # Create Info.plist if not exists
-          if [ ! -f "Payload/JitStreamer.app/Info.plist" ]; then
-            cat > "Payload/JitStreamer.app/Info.plist" << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>CFBundleIdentifier</key>
-                <string>com.stik.jitstreamer</string>
-                <key>CFBundleName</key>
-                <string>JitStreamer</string>
-                <key>CFBundleExecutable</key>
-                <string>JitStreamer</string>
-                <key>CFBundleShortVersionString</key>
-                <string>1.0</string>
-                <key>CFBundleVersion</key>
-                <string>1.0</string>
-                <key>MinimumOSVersion</key>
-                <string>17.4</string>
-                <key>CFBundlePackageType</key>
-                <string>APPL</string>
-                <key>LSRequiresIPhoneOS</key>
-                <true/>
-            </dict>
-            </plist>
-            EOF
-          fi
+          echo "Creating Info.plist..."
+          cat > Payload/JitStreamer.app/Info.plist << 'ENDOFFILE'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleIdentifier</key>
+              <string>com.stik.jitstreamer</string>
+              <key>CFBundleName</key>
+              <string>JitStreamer</string>
+              <key>CFBundleExecutable</key>
+              <string>JitStreamer</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1.0</string>
+              <key>MinimumOSVersion</key>
+              <string>17.4</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSRequiresIPhoneOS</key>
+              <true/>
+          </dict>
+          </plist>
+          ENDOFFILE
           
-          # Create IPA
+          echo "Creating IPA..."
           zip -r JitStreamer.ipa Payload
           
-          # Show contents and size for verification
-          echo "IPA Contents:"
-          unzip -l JitStreamer.ipa
-          echo "IPA Size:"
-          ls -lh JitStreamer.ipa
+          echo "Cleaning up..."
+          rm -rf Payload
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
