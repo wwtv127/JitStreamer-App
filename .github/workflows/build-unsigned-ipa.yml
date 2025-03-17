@@ -26,6 +26,12 @@ jobs:
           sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
           sed -i '' 's/preferredProjectObjectVersion = 77/preferredProjectObjectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
 
+      - name: List Available SDKs
+        run: xcodebuild -showsdks
+
+      - name: List Available Schemes
+        run: xcodebuild -list -project JitStreamer.xcodeproj
+
       - name: Archive Build (Unsigned)
         run: |
           xcodebuild clean archive \
@@ -33,25 +39,19 @@ jobs:
             -scheme "JitStreamer" \
             -configuration Release \
             -archivePath build/JitStreamer.xcarchive \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            ONLY_ACTIVE_ARCH=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            SWIFT_OPTIMIZATION_LEVEL="-Onone" \
             IPHONEOS_DEPLOYMENT_TARGET=17.0
 
       - name: Create IPA from Archive
         run: |
           # Copy the .app from the archive
           cp -R build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app .
-
-          # Optionally strip debug symbols from the executable
-          strip -S -x JitStreamer.app/JitStreamer || true
-
-          # Optionally remove unwanted simulator slices
-          APP_PATH="JitStreamer.app"
-          if [ -f "$APP_PATH/JitStreamer" ]; then
-            lipo "$APP_PATH/JitStreamer" -info
-            lipo -remove x86_64 "$APP_PATH/JitStreamer" -o "$APP_PATH/JitStreamer" || true
-          fi
 
           # Package the app into an IPA
           mkdir -p Payload
