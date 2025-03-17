@@ -83,8 +83,11 @@ jobs:
             -framework Foundation \
             -framework UIKit \
             -framework UniformTypeIdentifiers \
-            -import-objc-header JitStreamer/JitStreamer-Bridging-Header.h \
             -enable-library-evolution \
+            -parse-as-library \
+            -whole-module-optimization \
+            -emit-module \
+            -module-name JitStreamer \
             -swift-version 5
 
           # Create IPA
