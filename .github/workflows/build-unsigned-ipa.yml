@@ -21,29 +21,12 @@ jobs:
         with:
           xcode-version: '15.2'
 
-      - name: Fix Project Format
-        run: |
-          # Fix objectVersion
-          sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
-          
-          # Fix PBXFileSystemSynchronizedRootGroup to PBXGroup
-          sed -i '' 's/PBXFileSystemSynchronizedRootGroup/PBXGroup/g' JitStreamer.xcodeproj/project.pbxproj
-          
-          # Fix any missing isa keys
-          sed -i '' 's/isa = ;/isa = PBXBuildFile;/g' JitStreamer.xcodeproj/project.pbxproj
-          
-          # Ensure proper project structure
-          plutil -convert xml1 JitStreamer.xcodeproj/project.pbxproj
-
       - name: Build App
         run: |
-          # List available schemes
-          xcodebuild -list -project JitStreamer.xcodeproj
-          
-          # Build the app
+          # Build the app using your existing project
           xcodebuild clean archive \
             -project JitStreamer.xcodeproj \
-            -scheme "JitStreamer" \
+            -scheme JitStreamer \
             -configuration Release \
             -sdk iphoneos \
             -archivePath build/JitStreamer.xcarchive \
@@ -51,9 +34,11 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_BITCODE=NO \
-            ONLY_ACTIVE_ARCH=NO \
             DEVELOPMENT_TEAM="" \
             IPHONEOS_DEPLOYMENT_TARGET=17.4
+
+          # Show build output for debugging
+          ls -la build/JitStreamer.xcarchive/Products/Applications/
 
       - name: Create IPA Structure
         run: |
@@ -63,9 +48,14 @@ jobs:
           # Copy the built .app
           cp -r build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app Payload/
           
+          # Show contents for debugging
+          ls -la Payload/JitStreamer.app/
+          
           # Create IPA
           zip -r JitStreamer.ipa Payload
-          rm -rf Payload build
+          
+          # Show IPA size for debugging
+          ls -lh JitStreamer.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
