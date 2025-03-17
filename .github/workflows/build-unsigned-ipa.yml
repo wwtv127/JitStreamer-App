@@ -10,14 +10,14 @@ on:
 jobs:
   build-unsigned-ipa:
     name: Build Unsigned IPA
-    runs-on: macos-latest
+    runs-on: macos-14 # Using macOS 14 (Sonoma) for latest Xcode
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Select Xcode 15.2
+        run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
       - name: Build App
         run: |
@@ -27,7 +27,9 @@ jobs:
             -configuration Release \
             -sdk iphoneos \
             -archivePath build/JitStreamer.xcarchive \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER=""
 
       - name: Create IPA Structure
         run: |
