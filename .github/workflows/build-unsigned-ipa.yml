@@ -21,24 +21,46 @@ jobs:
         with:
           xcode-version: '15.2'
 
+      - name: Fix Project File
+        run: |
+          # Backup original project file
+          cp JitStreamer.xcodeproj/project.pbxproj JitStreamer.xcodeproj/project.pbxproj.bak
+          
+          # Fix the PBXFileSystemSynchronizedRootGroup issue
+          sed -i '' 's/PBXFileSystemSynchronizedRootGroup/PBXGroup/g' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Fix object version
+          sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Fix any empty isa keys
+          sed -i '' 's/isa = ;/isa = PBXBuildFile;/g' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Fix any missing isa keys in PBXGroup sections
+          sed -i '' '/^[[:space:]]*[A-Z0-9]* \/\* .* \*\/ = {$/,/^[[:space:]]*};$/{/isa = /!{/^[[:space:]]*[A-Z0-9]* \/\* .* \*\/ = {$/a\'$'\n\t\tisa = PBXGroup;'}}' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Show the changes for debugging
+          echo "Project file after fixes:"
+          cat JitStreamer.xcodeproj/project.pbxproj
+
       - name: Build App
         run: |
-          # Build the app using your existing project
-          xcodebuild clean archive \
+          # List available schemes
+          xcodebuild -list -project JitStreamer.xcodeproj || true
+          
+          # Build the app
+          xcodebuild clean build \
             -project JitStreamer.xcodeproj \
             -scheme JitStreamer \
             -configuration Release \
             -sdk iphoneos \
-            -archivePath build/JitStreamer.xcarchive \
+            -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             ENABLE_BITCODE=NO \
             DEVELOPMENT_TEAM="" \
-            IPHONEOS_DEPLOYMENT_TARGET=17.4
-
-          # Show build output for debugging
-          ls -la build/JitStreamer.xcarchive/Products/Applications/
+            IPHONEOS_DEPLOYMENT_TARGET=17.4 \
+            ONLY_ACTIVE_ARCH=NO
 
       - name: Create IPA Structure
         run: |
@@ -46,7 +68,7 @@ jobs:
           mkdir -p Payload
           
           # Copy the built .app
-          cp -r build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app Payload/
+          cp -r build/Build/Products/Release-iphoneos/JitStreamer.app Payload/
           
           # Show contents for debugging
           ls -la Payload/JitStreamer.app/
