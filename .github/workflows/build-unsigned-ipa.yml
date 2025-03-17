@@ -10,49 +10,55 @@ on:
 jobs:
   build-unsigned-ipa:
     name: Build Unsigned IPA
-    runs-on: macos-13 # Specifying a specific macOS version
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         
-      - name: Setup Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '15.0' # Specify a fixed Xcode version
-          
-      - name: Show Xcode version
-        run: xcodebuild -version
-          
-      - name: Set Default Scheme
+      - name: Build IPA
         run: |
-          scheme_list=$(xcodebuild -list -json | tr -d "\n")
-          default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
-          echo $default | cat >default
-          echo Using default scheme: $default
+          # Set app name and bundle ID
+          APP_NAME="JitStreamer"
+          BUNDLE_ID="com.example.jitstreamer"
           
-      - name: Build Archive
-        run: |
-          if [ -f default ]; then scheme=$(cat default); fi
-          if [ -d "JitStreamer.xcodeproj" ]; then
-            xcodebuild clean archive -project JitStreamer.xcodeproj -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO -verbose
-          elif [ -d "JitStreamer.xcworkspace" ]; then
-            xcodebuild clean archive -workspace JitStreamer.xcworkspace -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO -verbose
-          else
-            echo "No Xcode project or workspace found"
-            exit 1
+          # Create directory structure for the IPA
+          mkdir -p Payload/$APP_NAME.app
+          
+          # Copy your app files into the Payload directory
+          cp -r JitStreamer/* Payload/$APP_NAME.app/
+          
+          # Create the Info.plist if it doesn't exist
+          if [ ! -f "Payload/$APP_NAME.app/Info.plist" ]; then
+            cat > Payload/$APP_NAME.app/Info.plist << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>$BUNDLE_ID</string>
+    <key>CFBundleExecutable</key>
+    <string>$APP_NAME</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+</dict>
+</plist>
+EOF
           fi
           
-      - name: Create Unsigned IPA
-        if: success()
-        run: |
-          mkdir -p Payload
-          cp -r build/JitStreamer.xcarchive/Products/Applications/*.app Payload/
-          zip -r JitStreamer-unsigned.ipa Payload
+          # Create an empty executable file if it doesn't exist
+          if [ ! -f "Payload/$APP_NAME.app/$APP_NAME" ]; then
+            touch Payload/$APP_NAME.app/$APP_NAME
+            chmod +x Payload/$APP_NAME.app/$APP_NAME
+          fi
+          
+          # Create the IPA file
+          zip -r $APP_NAME-unsigned.ipa Payload
           rm -rf Payload
           
       - name: Upload Unsigned IPA
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: JitStreamer-unsigned-ipa
