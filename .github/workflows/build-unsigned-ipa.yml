@@ -19,7 +19,7 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 'latest'
+          xcode-version: '15.2'
 
       - name: Fix Project Format
         run: |
@@ -31,12 +31,19 @@ jobs:
           xcodebuild clean archive \
             -project JitStreamer.xcodeproj \
             -scheme "JitStreamer" \
+            -sdk iphoneos \
             -configuration Release \
             -archivePath build/JitStreamer.xcarchive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            IPHONEOS_DEPLOYMENT_TARGET=17.0
+            DEVELOPMENT_TEAM="" \
+            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="arm64" \
+            VALID_ARCHS="arm64" \
+            SUPPORTED_PLATFORMS="iphoneos" \
+            IPHONEOS_DEPLOYMENT_TARGET=17.0 \
+            BUILD_LIBRARIES_FOR_DISTRIBUTION=YES
 
       - name: Create IPA from Archive
         run: |
@@ -45,13 +52,6 @@ jobs:
 
           # Strip debug symbols
           strip -S -x JitStreamer.app/JitStreamer || true
-
-          # Remove simulator architectures
-          APP_PATH="JitStreamer.app"
-          if [ -f "$APP_PATH/JitStreamer" ]; then
-            lipo "$APP_PATH/JitStreamer" -info
-            lipo -remove x86_64 "$APP_PATH/JitStreamer" -o "$APP_PATH/JitStreamer" || true
-          fi
 
           # Package into IPA
           mkdir -p Payload
