@@ -21,10 +21,23 @@ jobs:
 
       - name: Build and Create IPA
         run: |
+          # List available schemes
+          echo "Available schemes:"
+          xcodebuild -list -project JitStreamer.xcodeproj
+
           # Clean build directory
-          xcodebuild clean -project JitStreamer.xcodeproj -scheme JitStreamer
+          xcodebuild clean -workspace JitStreamer.xcworkspace -scheme JitStreamer || xcodebuild clean -project JitStreamer.xcodeproj -scheme JitStreamer
 
           # Archive the project
+          xcodebuild archive \
+            -workspace JitStreamer.xcworkspace \
+            -scheme JitStreamer \
+            -archivePath build/JitStreamer.xcarchive \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO || \
           xcodebuild archive \
             -project JitStreamer.xcodeproj \
             -scheme JitStreamer \
