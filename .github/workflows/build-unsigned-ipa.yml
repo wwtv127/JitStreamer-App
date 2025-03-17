@@ -21,43 +21,39 @@ jobs:
         with:
           xcode-version: '15.2'
 
-      - name: Fix Project Format
+      - name: Create IPA Structure
         run: |
-          sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
-          sed -i '' 's/preferredProjectObjectVersion = 77/preferredProjectObjectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
-
-      - name: Archive Build (Unsigned)
-        run: |
-          xcodebuild clean archive \
-            -project JitStreamer.xcodeproj \
-            -scheme "JitStreamer" \
-            -sdk iphoneos \
-            -configuration Release \
-            -archivePath build/JitStreamer.xcarchive \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            DEVELOPMENT_TEAM="" \
-            ONLY_ACTIVE_ARCH=NO \
-            ARCHS="arm64" \
-            VALID_ARCHS="arm64" \
-            SUPPORTED_PLATFORMS="iphoneos" \
-            IPHONEOS_DEPLOYMENT_TARGET=17.0 \
-            BUILD_LIBRARIES_FOR_DISTRIBUTION=YES
-
-      - name: Create IPA from Archive
-        run: |
-          # Copy the .app from the archive
-          cp -R build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app .
-
-          # Strip debug symbols
-          strip -S -x JitStreamer.app/JitStreamer || true
-
-          # Package into IPA
-          mkdir -p Payload
-          cp -R JitStreamer.app Payload/
+          # Create basic app structure
+          mkdir -p Payload/JitStreamer.app
+          
+          # Copy all source files and resources
+          cp -r JitStreamer/* Payload/JitStreamer.app/
+          
+          # Create basic Info.plist
+          cat > Payload/JitStreamer.app/Info.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleIdentifier</key>
+              <string>com.stik.jitstreamer</string>
+              <key>CFBundleName</key>
+              <string>JitStreamer</string>
+              <key>CFBundleExecutable</key>
+              <string>JitStreamer</string>
+              <key>CFBundleVersion</key>
+              <string>1.0</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>MinimumOSVersion</key>
+              <string>17.0</string>
+          </dict>
+          </plist>
+          EOF
+          
+          # Create IPA
           zip -r JitStreamer.ipa Payload
-          rm -rf Payload JitStreamer.app
+          rm -rf Payload
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
