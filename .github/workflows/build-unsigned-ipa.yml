@@ -15,49 +15,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
-      - name: Build IPA
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build App
         run: |
-          # Set app name and bundle ID
-          APP_NAME="JitStreamer"
-          BUNDLE_ID="com.example.jitstreamer"
+          # Build for iOS
+          xcodebuild clean archive \
+            -scheme JitStreamer \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/JitStreamer.xcarchive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Create IPA Structure
+        run: |
+          # Create Payload directory
+          mkdir -p Payload/JitStreamer.app
           
-          # Create directory structure for the IPA
-          mkdir -p Payload/$APP_NAME.app
+          # Copy app contents from archive
+          cp -r build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app/* Payload/JitStreamer.app/
           
-          # Copy your app files into the Payload directory
-          cp -r JitStreamer/* Payload/$APP_NAME.app/
+          # Remove code signing if present
+          rm -rf Payload/JitStreamer.app/_CodeSignature
+          rm -rf Payload/JitStreamer.app/embedded.mobileprovision
           
-          # Create the Info.plist if it doesn't exist
-          if [ ! -f "Payload/$APP_NAME.app/Info.plist" ]; then
-            cat > Payload/$APP_NAME.app/Info.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key>
-    <string>$BUNDLE_ID</string>
-    <key>CFBundleExecutable</key>
-    <string>$APP_NAME</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-</dict>
-</plist>
-EOF
-          fi
-          
-          # Create an empty executable file if it doesn't exist
-          if [ ! -f "Payload/$APP_NAME.app/$APP_NAME" ]; then
-            touch Payload/$APP_NAME.app/$APP_NAME
-            chmod +x Payload/$APP_NAME.app/$APP_NAME
-          fi
-          
-          # Create the IPA file
-          zip -r $APP_NAME-unsigned.ipa Payload
+          # Create IPA
+          zip -r JitStreamer-unsigned.ipa Payload
           rm -rf Payload
-          
+
       - name: Upload Unsigned IPA
         uses: actions/upload-artifact@v4
         with:
