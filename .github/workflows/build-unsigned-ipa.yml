@@ -30,22 +30,22 @@ jobs:
           
           # Create the Info.plist if it doesn't exist
           if [ ! -f "Payload/$APP_NAME.app/Info.plist" ]; then
-            cat > Payload/$APP_NAME.app/Info.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key>
-    <string>$BUNDLE_ID</string>
-    <key>CFBundleExecutable</key>
-    <string>$APP_NAME</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-</dict>
-</plist>
-EOF
+            cat > "Payload/$APP_NAME.app/Info.plist" << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>CFBundleIdentifier</key>
+                <string>com.stik.jitstreamer</string>
+                <key>CFBundleExecutable</key>
+                <string>JitStreamer</string>
+                <key>CFBundleVersion</key>
+                <string>1.0</string>
+                <key>CFBundleShortVersionString</key>
+                <string>1.0</string>
+            </dict>
+            </plist>
+            EOF
           fi
           
           # Create an empty executable file if it doesn't exist
