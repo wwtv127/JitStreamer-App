@@ -26,30 +26,30 @@ jobs:
           
           # Create Info.plist if not exists
           if [ ! -f "Payload/JitStreamer.app/Info.plist" ]; then
-            cat > Payload/JitStreamer.app/Info.plist << 'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleIdentifier</key>
-    <string>com.stik.jitstreamer</string>
-    <key>CFBundleName</key>
-    <string>JitStreamer</string>
-    <key>CFBundleExecutable</key>
-    <string>JitStreamer</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
-    <key>CFBundleVersion</key>
-    <string>1.0</string>
-    <key>MinimumOSVersion</key>
-    <string>17.4</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-</dict>
-</plist>
-EOF
+            cat > "Payload/JitStreamer.app/Info.plist" << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>CFBundleIdentifier</key>
+                <string>com.stik.jitstreamer</string>
+                <key>CFBundleName</key>
+                <string>JitStreamer</string>
+                <key>CFBundleExecutable</key>
+                <string>JitStreamer</string>
+                <key>CFBundleShortVersionString</key>
+                <string>1.0</string>
+                <key>CFBundleVersion</key>
+                <string>1.0</string>
+                <key>MinimumOSVersion</key>
+                <string>17.4</string>
+                <key>CFBundlePackageType</key>
+                <string>APPL</string>
+                <key>LSRequiresIPhoneOS</key>
+                <true/>
+            </dict>
+            </plist>
+            EOF
           fi
           
           # Create IPA
