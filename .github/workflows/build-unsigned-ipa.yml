@@ -23,19 +23,37 @@ jobs:
 
       - name: Fix Project Format
         run: |
+          # Fix objectVersion
           sed -i '' 's/objectVersion = 77/objectVersion = 56/' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Fix PBXFileSystemSynchronizedRootGroup to PBXGroup
+          sed -i '' 's/PBXFileSystemSynchronizedRootGroup/PBXGroup/g' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Fix any missing isa keys
+          sed -i '' 's/isa = ;/isa = PBXBuildFile;/g' JitStreamer.xcodeproj/project.pbxproj
+          
+          # Ensure proper project structure
+          plutil -convert xml1 JitStreamer.xcodeproj/project.pbxproj
 
       - name: Build App
         run: |
-          xcodebuild clean build \
+          # List available schemes
+          xcodebuild -list -project JitStreamer.xcodeproj
+          
+          # Build the app
+          xcodebuild clean archive \
             -project JitStreamer.xcodeproj \
-            -scheme JitStreamer \
+            -scheme "JitStreamer" \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath build \
+            -archivePath build/JitStreamer.xcarchive \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            ENABLE_BITCODE=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            DEVELOPMENT_TEAM="" \
+            IPHONEOS_DEPLOYMENT_TARGET=17.4
 
       - name: Create IPA Structure
         run: |
@@ -43,13 +61,7 @@ jobs:
           mkdir -p Payload
           
           # Copy the built .app
-          cp -r build/Build/Products/Release-iphoneos/JitStreamer.app Payload/
-          
-          # Update Info.plist with required keys
-          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities array" Payload/JitStreamer.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UIRequiredDeviceCapabilities:0 string 'arm64'" Payload/JitStreamer.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" Payload/JitStreamer.app/Info.plist
-          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string 'UIInterfaceOrientationPortrait'" Payload/JitStreamer.app/Info.plist
+          cp -r build/JitStreamer.xcarchive/Products/Applications/JitStreamer.app Payload/
           
           # Create IPA
           zip -r JitStreamer.ipa Payload
