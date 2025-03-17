@@ -10,7 +10,7 @@ on:
 jobs:
   build-unsigned-ipa:
     name: Build Unsigned IPA
-    runs-on: macos-latest
+    runs-on: macos-13 # Specifying a specific macOS version
 
     steps:
       - name: Checkout
@@ -19,7 +19,10 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '15.0' # Specify a fixed Xcode version
+          
+      - name: Show Xcode version
+        run: xcodebuild -version
           
       - name: Set Default Scheme
         run: |
@@ -32,15 +35,16 @@ jobs:
         run: |
           if [ -f default ]; then scheme=$(cat default); fi
           if [ -d "JitStreamer.xcodeproj" ]; then
-            xcodebuild clean archive -project JitStreamer.xcodeproj -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            xcodebuild clean archive -project JitStreamer.xcodeproj -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO -verbose
           elif [ -d "JitStreamer.xcworkspace" ]; then
-            xcodebuild clean archive -workspace JitStreamer.xcworkspace -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            xcodebuild clean archive -workspace JitStreamer.xcworkspace -scheme "$scheme" -configuration Release -archivePath build/JitStreamer.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO -verbose
           else
             echo "No Xcode project or workspace found"
             exit 1
           fi
           
       - name: Create Unsigned IPA
+        if: success()
         run: |
           mkdir -p Payload
           cp -r build/JitStreamer.xcarchive/Products/Applications/*.app Payload/
@@ -48,6 +52,7 @@ jobs:
           rm -rf Payload
           
       - name: Upload Unsigned IPA
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: JitStreamer-unsigned-ipa
