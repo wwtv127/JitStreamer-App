@@ -12,6 +12,7 @@ struct JitStreamerApp: App {
     var body: some Scene {
         WindowGroup {
             SplashScreenView()
+                .preferredColorScheme(.dark)
         }
     }
 }
